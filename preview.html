@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>IronPace - Gym Timer & Set Counter</title>
+  <style>
+    :root {
+      --bg: #0C0D11;
+      --surface: #151821;
+      --card: #1B202D;
+      --surface-light: #262C3E;
+      --border: #2C3347;
+      --cyan: #00E5FF;
+      --green: #00E676;
+      --orange: #FF9100;
+      --red: #FF1744;
+      --text: #FFFFFF;
+      --text-muted: #8E95A5;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .phone-container {
+      width: 100%;
+      max-width: 440px;
+      height: 100vh;
+      max-height: 900px;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 480px) {
+      .phone-container {
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        border: none;
+      }
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .exercise-pill {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .exercise-pill:active {
+      transform: scale(0.96);
+      background: var(--surface-light);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:active {
+      background: var(--surface-light);
+    }
+
+    .icon-btn.active {
+      color: var(--cyan);
+    }
+
+    /* Set Counter Card */
+    .set-card {
+      margin: 14px 16px;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .set-info-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 1.2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .target-badge {
+      background: var(--surface-light);
+      color: var(--cyan);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .set-numbers {
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--text);
+      line-height: 1.1;
+      margin-top: 4px;
+    }
+
+    .set-numbers span {
+      font-size: 20px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .set-adjusters {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-step {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 20px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-step:active {
+      transform: scale(0.92);
+      background: var(--cyan);
+      color: black;
+    }
+
+    /* Timer Dial Area */
+    .timer-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .dial-wrapper {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas#timerCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .dial-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      color: var(--cyan);
+      margin-bottom: 8px;
+      transition: all 0.3s;
+    }
+
+    .time-digits {
+      font-size: 56px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 2px;
+      color: var(--text);
+      transition: color 0.2s;
+    }
+
+    .quick-adjust {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .btn-quick-adjust {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-quick-adjust:active {
+      color: var(--cyan);
+      border-color: var(--cyan);
+      transform: scale(0.94);
+    }
+
+    /* Preset Chips */
+    .presets-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 0 16px;
+      margin-bottom: 16px;
+      scrollbar-width: none;
+    }
+
+    .presets-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .preset-chip {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      color: var(--text-muted);
+      padding: 10px 18px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .preset-chip.active {
+      background: var(--cyan);
+      color: black;
+      border-color: var(--cyan);
+      font-weight: 800;
+    }
+
+    /* Giant CTA Buttons */
+    .action-container {
+      padding: 0 16px 12px;
+    }
+
+    .btn-giant {
+      width: 100%;
+      height: 68px;
+      border-radius: 18px;
+      border: none;
+      background: var(--cyan);
+      color: #000;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 8px 24px rgba(0, 229, 255, 0.35);
+      transition: all 0.15s;
+    }
+
+    .btn-giant:active {
+      transform: scale(0.98);
+      filter: brightness(0.95);
+    }
+
+    .btn-giant.green {
+      background: var(--green);
+      box-shadow: 0 8px 24px rgba(0, 230, 118, 0.4);
+    }
+
+    .split-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-split-pause {
+      flex: 1;
+      height: 64px;
+      background: transparent;
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-split-skip {
+      flex: 2;
+      height: 64px;
+      background: var(--surface-light);
+      border: 1.5px solid var(--cyan);
+      border-radius: 16px;
+      color: var(--cyan);
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+    }
+
+    /* Bottom Bar */
+    .bottom-bar {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .bottom-bar span.highlight {
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    /* Modal Sheet */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: none;
+      align-items: flex-end;
+    }
+
+    .modal-sheet {
+      width: 100%;
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      border-top: 1px solid var(--border);
+      padding: 20px;
+      max-height: 80%;
+      overflow-y: auto;
+    }
+
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .exercise-list-item {
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .exercise-list-item:hover, .exercise-list-item:active {
+      background: var(--card);
+      color: var(--cyan);
+    }
+  </style>
+</head>
+<body>
+
+<div class="phone-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="exercise-pill" id="exerciseBtn" onclick="openExerciseModal()">
+      <span>🏋️</span>
+      <span id="exerciseNameLabel">Bench Press</span>
+      <span style="font-size: 10px; color: var(--text-muted);">▼</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn active" id="wakeLockBtn" onclick="toggleWakeLock()" title="Screen Wake Lock">
+        💡
+      </button>
+      <button class="icon-btn active" id="soundBtn" onclick="toggleSound()" title="Sound Toggle">
+        🔔
+      </button>
+      <button class="icon-btn" onclick="resetWorkout()" title="Reset Workout">
+        🔄
+      </button>
+    </div>
+  </div>
+
+  <!-- Set Counter Card -->
+  <div class="set-card">
+    <div>
+      <div class="set-info-title">
+        <span>CURRENT SET</span>
+        <span class="target-badge" onclick="cycleTarget()">Target: <span id="targetLabel">4</span></span>
+      </div>
+      <div class="set-numbers">
+        <span id="currentSetLabel" style="color: white; font-size: 38px;">1</span>
+        <span id="targetSlashLabel"> / 4</span>
+      </div>
+    </div>
+    <div class="set-adjusters">
+      <button class="btn-step" onclick="changeSet(-1)">−</button>
+      <button class="btn-step" onclick="changeSet(1)">+</button>
+    </div>
+  </div>
+
+  <!-- Target Completed Banner -->
+  <div id="targetBanner" style="display:none; margin: 0 16px 8px; padding: 8px 12px; background: rgba(0, 230, 118, 0.15); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 10px; color: var(--green); font-size: 12px; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+    <span>🎉 Target sets finished! Ready for next lift.</span>
+    <span style="cursor: pointer; text-decoration: underline;" onclick="openExerciseModal()">Next ➔</span>
+  </div>
+
+  <!-- Timer Dial -->
+  <div class="timer-area">
+    <div class="dial-wrapper">
+      <canvas id="timerCanvas" width="250" height="250"></canvas>
+      <div class="dial-content">
+        <div class="status-badge" id="statusBadge">READY TO LIFT</div>
+        <div class="time-digits" id="timeDisplay">01:30</div>
+        <div class="quick-adjust" id="quickAdjustRow" style="display: none;">
+          <button class="btn-quick-adjust" onclick="adjustTime(-15)">−15s</button>
+          <button class="btn-quick-adjust" onclick="adjustTime(15)">+15s</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rest Presets Chips -->
+  <div class="presets-row">
+    <div class="preset-chip" onclick="setPreset(30)">30s</div>
+    <div class="preset-chip" onclick="setPreset(45)">45s</div>
+    <div class="preset-chip" onclick="setPreset(60)">60s</div>
+    <div class="preset-chip active" onclick="setPreset(90)">90s</div>
+    <div class="preset-chip" onclick="setPreset(120)">2m</div>
+    <div class="preset-chip" onclick="setPreset(180)">3m</div>
+  </div>
+
+  <!-- Big Action Button -->
+  <div class="action-container" id="actionContainer">
+    <button class="btn-giant" id="btnMainAction" onclick="completeSetAndRest()">
+      <span style="font-size: 24px;">⏱️</span>
+      <div style="text-align: left; line-height: 1.2;">
+        <div id="mainBtnTitle">COMPLETE SET & REST</div>
+        <div id="mainBtnSub" style="font-size: 11px; opacity: 0.8; font-weight: 700;">Log Set 1 ➔ Rest 90s</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- Bottom Session Bar -->
+  <div class="bottom-bar">
+    <div>⏱️ Session: <span id="sessionTimerText">00:00</span></div>
+    <div>Total Done: <span class="highlight" id="totalSetsLabel">0 sets</span></div>
+  </div>
+
+  <!-- Modal for Exercises -->
+  <div class="modal-overlay" id="exerciseModal" onclick="closeExerciseModal(event)">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title">
+        <span>Select Exercise (เลือกท่าฝึก)</span>
+        <button style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer;" onclick="closeExerciseModal()">✕</button>
+      </div>
+      <div id="exerciseListContainer"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Web Audio Synthesizer (Zero External Dependencies)
+  let audioCtx = null;
+  function getAudioContext() {
+    if (!audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) audioCtx = new AudioContext();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playTone(freq, duration, type = 'sine') {
+    if (!state.soundEnabled) return;
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) {
+      console.log('Audio error', e);
+    }
+  }
+
+  function playBeepCountdown() {
+    playTone(880, 0.15, 'sine');
+    vibrate([40]);
+  }
+
+  function playChimeFinish() {
+    playTone(1046.5, 0.15, 'sine');
+    setTimeout(() => playTone(1318.5, 0.35, 'sine'), 160);
+    vibrate([100, 50, 150]);
+  }
+
+  function vibrate(pattern) {
+    if ('vibrate' in navigator) {
+      try { navigator.vibrate(pattern); } catch (e) {}
+    }
+  }
+
+  // App State
+  const state = {
+    exercise: 'Bench Press',
+    currentSet: 1,
+    targetSets: 4,
+    totalSets: 0,
+    presetSeconds: 90,
+    remainingSeconds: 90,
+    status: 'idle', // 'idle', 'resting', 'paused', 'completed'
+    soundEnabled: true,
+    wakeLockActive: false,
+    sessionSeconds: 0,
+  };
+
+  const commonExercises = [
+    'Bench Press',
+    'Incline Dumbbell Press',
+    'Barbell Squat',
+    'Deadlift',
+    'Barbell Row',
+    'Lat Pulldown',
+    'Overhead Shoulder Press',
+    'Dumbbell Lateral Raise',
+    'Bicep Curl',
+    'Tricep Pushdown',
+    'Leg Press',
+    'Romanian Deadlift',
+    'Pull-Ups',
+  ];
+
+  let restInterval = null;
+  let sessionInterval = null;
+
+  // Canvas Drawing
+  const canvas = document.getElementById('timerCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function drawDial() {
+    const size = canvas.width;
+    const center = size / 2;
+    const radius = center - 14;
+    const strokeWidth = 14;
+
+    ctx.clearRect(0, 0, size, size);
+
+    // Track
+    ctx.beginPath();
+    ctx.arc(center, center, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = '#262C3E';
+    ctx.lineWidth = strokeWidth;
+    ctx.stroke();
+
+    // Progress
+    let progress = 0;
+    let strokeColor = '#00E5FF';
+
+    if (state.status === 'resting' || state.status === 'paused') {
+      progress = (state.presetSeconds - state.remainingSeconds) / state.presetSeconds;
+      if (state.remainingSeconds <= 3) {
+        strokeColor = '#FF1744';
+      } else if (state.remainingSeconds <= 10) {
+        strokeColor = '#FF9100';
+      }
+    } else if (state.status === 'completed') {
+      progress = 1;
+      strokeColor = '#00E676';
+    }
+
+    if (progress > 0) {
+      ctx.beginPath();
+      ctx.arc(center, center, radius, 0, Math.PI * 2 * Math.min(progress, 1));
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+  }
+
+  function formatTime(secs) {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function updateUI() {
+    // Labels
+    document.getElementById('exerciseNameLabel').innerText = state.exercise;
+    document.getElementById('currentSetLabel').innerText = state.currentSet;
+    document.getElementById('targetLabel').innerText = state.targetSets > 0 ? state.targetSets : '∞';
+    document.getElementById('targetSlashLabel').innerText = state.targetSets > 0 ? ` / ${state.targetSets}` : '';
+    document.getElementById('totalSetsLabel').innerText = `${state.totalSets} sets`;
+
+    const targetBanner = document.getElementById('targetBanner');
+    if (state.targetSets > 0 && state.currentSet > state.targetSets) {
+      targetBanner.style.display = 'flex';
+    } else {
+      targetBanner.style.display = 'none';
+    }
+
+    // Timer display
+    const timeDisplay = document.getElementById('timeDisplay');
+    const statusBadge = document.getElementById('statusBadge');
+    const quickAdjust = document.getElementById('quickAdjustRow');
+
+    if (state.status === 'idle') {
+      timeDisplay.innerText = formatTime(state.presetSeconds);
+      timeDisplay.style.color = '#FFFFFF';
+      statusBadge.innerText = 'READY TO LIFT';
+      statusBadge.style.color = 'var(--cyan)';
+      statusBadge.style.borderColor = 'rgba(0, 229, 255, 0.3)';
+      statusBadge.style.background = 'rgba(0, 229, 255, 0.12)';
+      quickAdjust.style.display = 'none';
+    } else if (state.status === 'resting') {
+      timeDisplay.innerText = formatTime(state.remainingSeconds);
+      quickAdjust.style.display = 'flex';
+      if (state.remainingSeconds <= 3) {
+        timeDisplay.style.color = 'var(--red)';
+        statusBadge.innerText = 'GET READY!';
+        statusBadge.style.color = 'var(--red)';
+        statusBadge.style.borderColor = 'rgba(255, 23, 68, 0.4)';
+        statusBadge.style.background = 'rgba(255, 23, 68, 0.15)';
+      } else if (state.remainingSeconds <= 10) {
+        timeDisplay.style.color = 'var(--orange)';
+        statusBadge.innerText = 'ALMOST TIME';
+        statusBadge.style.color = 'var(--orange)';
+        statusBadge.style.borderColor = 'rgba(255, 145, 0, 0.4)';
+        statusBadge.style.background = 'rgba(255, 145, 0, 0.15)';
+      } else {
+        timeDisplay.style.color = 'var(--text)';
+        statusBadge.innerText = 'RESTING';
+        statusBadge.style.color = 'var(--cyan)';
+        statusBadge.style.borderColor = 'rgba(0, 229, 255, 0.3)';
+        statusBadge.style.background = 'rgba(0, 229, 255, 0.12)';
+      }
+    } else if (state.status === 'paused') {
+      timeDisplay.innerText = formatTime(state.remainingSeconds);
+      statusBadge.innerText = 'PAUSED';
+      statusBadge.style.color = 'var(--orange)';
+      quickAdjust.style.display = 'flex';
+    } else if (state.status === 'completed') {
+      timeDisplay.innerText = '00:00';
+      timeDisplay.style.color = 'var(--green)';
+      statusBadge.innerText = 'TIME TO LIFT!';
+      statusBadge.style.color = 'var(--green)';
+      statusBadge.style.borderColor = 'rgba(0, 230, 118, 0.4)';
+      statusBadge.style.background = 'rgba(0, 230, 118, 0.15)';
+      quickAdjust.style.display = 'none';
+    }
+
+    // Action button
+    const container = document.getElementById('actionContainer');
+    if (state.status === 'resting') {
+      container.innerHTML = `
+        <div class="split-actions">
+          <button class="btn-split-pause" onclick="pauseRest()">⏸ PAUSE</button>
+          <button class="btn-split-skip" onclick="skipRest()">⏩ LIFT NOW (SKIP)</button>
+        </div>
+      `;
+    } else if (state.status === 'paused') {
+      container.innerHTML = `
+        <div class="split-actions">
+          <button class="btn-split-pause" style="background: var(--orange); color: black;" onclick="resumeRest()">▶ RESUME</button>
+          <button class="btn-split-skip" onclick="skipRest()">⏩ SKIP REST</button>
+        </div>
+      `;
+    } else if (state.status === 'completed') {
+      container.innerHTML = `
+        <button class="btn-giant green" onclick="completeSetAndRest()">
+          <span style="font-size: 24px;">⏱️</span>
+          <div style="text-align: left; line-height: 1.2;">
+            <div>FINISH SET & REST AGAIN</div>
+            <div style="font-size: 11px; opacity: 0.8; font-weight: 700;">Log Set ${state.currentSet} ➔ Rest ${state.presetSeconds}s</div>
+          </div>
+        </button>
+      `;
+    } else {
+      container.innerHTML = `
+        <button class="btn-giant" onclick="completeSetAndRest()">
+          <span style="font-size: 24px;">⏱️</span>
+          <div style="text-align: left; line-height: 1.2;">
+            <div>COMPLETE SET & REST</div>
+            <div style="font-size: 11px; opacity: 0.8; font-weight: 700;">Log Set ${state.currentSet} ➔ Rest ${state.presetSeconds}s</div>
+          </div>
+        </button>
+      `;
+    }
+
+    drawDial();
+  }
+
+  // Timer Handlers
+  function completeSetAndRest() {
+    getAudioContext();
+    vibrate([60]);
+    state.totalSets++;
+    state.currentSet++;
+    state.remainingSeconds = state.presetSeconds;
+    state.status = 'resting';
+
+    clearInterval(restInterval);
+    restInterval = setInterval(() => {
+      if (state.remainingSeconds > 1) {
+        state.remainingSeconds--;
+        if (state.remainingSeconds <= 3) {
+          playBeepCountdown();
+        }
+      } else {
+        clearInterval(restInterval);
+        state.remainingSeconds = 0;
+        state.status = 'completed';
+        playChimeFinish();
+      }
+      updateUI();
+    }, 1000);
+
+    updateUI();
+  }
+
+  function pauseRest() {
+    clearInterval(restInterval);
+    state.status = 'paused';
+    updateUI();
+  }
+
+  function resumeRest() {
+    state.status = 'resting';
+    restInterval = setInterval(() => {
+      if (state.remainingSeconds > 1) {
+        state.remainingSeconds--;
+        if (state.remainingSeconds <= 3) {
+          playBeepCountdown();
+        }
+      } else {
+        clearInterval(restInterval);
+        state.remainingSeconds = 0;
+        state.status = 'completed';
+        playChimeFinish();
+      }
+      updateUI();
+    }, 1000);
+    updateUI();
+  }
+
+  function skipRest() {
+    clearInterval(restInterval);
+    state.status = 'idle';
+    state.remainingSeconds = state.presetSeconds;
+    vibrate([40]);
+    updateUI();
+  }
+
+  function adjustTime(delta) {
+    state.remainingSeconds = Math.max(1, state.remainingSeconds + delta);
+    vibrate([20]);
+    updateUI();
+  }
+
+  function changeSet(delta) {
+    if (state.currentSet + delta >= 1) {
+      state.currentSet += delta;
+      vibrate([20]);
+      updateUI();
+    }
+  }
+
+  function cycleTarget() {
+    const targets = [3, 4, 5, 6, 0];
+    let idx = targets.indexOf(state.targetSets);
+    state.targetSets = targets[(idx + 1) % targets.length];
+    updateUI();
+  }
+
+  function setPreset(seconds) {
+    state.presetSeconds = seconds;
+    if (state.status === 'idle') {
+      state.remainingSeconds = seconds;
+    }
+    document.querySelectorAll('.preset-chip').forEach(el => {
+      el.classList.toggle('active', el.innerText.includes(seconds >= 60 ? (seconds/60) + 'm' : seconds + 's'));
+    });
+    vibrate([20]);
+    updateUI();
+  }
+
+  function toggleSound() {
+    state.soundEnabled = !state.soundEnabled;
+    const btn = document.getElementById('soundBtn');
+    btn.classList.toggle('active', state.soundEnabled);
+    btn.innerText = state.soundEnabled ? '🔔' : '🔕';
+  }
+
+  let wakeLock = null;
+  async function toggleWakeLock() {
+    if ('wakeLock' in navigator) {
+      try {
+        if (!state.wakeLockActive) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          state.wakeLockActive = true;
+        } else {
+          await wakeLock.release();
+          wakeLock = null;
+          state.wakeLockActive = false;
+        }
+      } catch (e) {
+        state.wakeLockActive = !state.wakeLockActive;
+      }
+    } else {
+      state.wakeLockActive = !state.wakeLockActive;
+    }
+    const btn = document.getElementById('wakeLockBtn');
+    btn.classList.toggle('active', state.wakeLockActive);
+  }
+
+  function resetWorkout() {
+    if (confirm('Reset workout sets and timer?')) {
+      clearInterval(restInterval);
+      state.currentSet = 1;
+      state.totalSets = 0;
+      state.status = 'idle';
+      state.remainingSeconds = state.presetSeconds;
+      state.sessionSeconds = 0;
+      updateUI();
+    }
+  }
+
+  // Session clock
+  sessionInterval = setInterval(() => {
+    state.sessionSeconds++;
+    const m = Math.floor(state.sessionSeconds / 60).toString().padStart(2, '0');
+    const s = (state.sessionSeconds % 60).toString().padStart(2, '0');
+    document.getElementById('sessionTimerText').innerText = `${m}:${s}`;
+  }, 1000);
+
+  // Exercise Modal
+  function openExerciseModal() {
+    const container = document.getElementById('exerciseListContainer');
+    container.innerHTML = commonExercises.map(ex => `
+      <div class="exercise-list-item" onclick="selectExercise('${ex}')">
+        <span>${ex}</span>
+        ${ex === state.exercise ? '<span style="color:var(--cyan)">✓</span>' : ''}
+      </div>
+    `).join('');
+    document.getElementById('exerciseModal').style.display = 'flex';
+  }
+
+  function closeExerciseModal() {
+    document.getElementById('exerciseModal').style.display = 'none';
+  }
+
+  function selectExercise(name) {
+    state.exercise = name;
+    state.currentSet = 1;
+    state.status = 'idle';
+    clearInterval(restInterval);
+    state.remainingSeconds = state.presetSeconds;
+    closeExerciseModal();
+    updateUI();
+  }
+
+  // Init
+  drawDial();
+  updateUI();
+</script>
+</body>
+</html>

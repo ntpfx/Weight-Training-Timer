@@ -1,0 +1,11 @@
+{
+  "name": "IronPace Gym Timer",
+  "short_name": "IronPace",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0c0d11",
+  "theme_color": "#00e5ff",
+  "description": "Minimalist Weight Training Timer & Set Counter",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false
+}
